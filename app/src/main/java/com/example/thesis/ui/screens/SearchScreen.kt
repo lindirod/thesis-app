@@ -51,7 +51,6 @@ fun SearchScreen(
                 .fillMaxSize()
                 .padding(horizontal = 24.dp, vertical = 24.dp)
         ) {
-            // Header Row: Back button, Home button, and Theme Toggle on the same line
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -119,32 +118,32 @@ fun SearchScreen(
             OutlinedTextField(
                 value         = artistQuery,
                 onValueChange = { artistQuery = it },
-                label         = { Text("Artist", color = colorScheme.onSurfaceVariant) },
-                singleLine    = true,
-                modifier      = Modifier.fillMaxWidth(),
-                colors        = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor   = colorScheme.primary,
+                label = { Text("Artist", color = colorScheme.onSurfaceVariant) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = colorScheme.primary,
                     unfocusedBorderColor = colorScheme.outline,
-                    focusedTextColor     = colorScheme.onBackground,
-                    unfocusedTextColor   = colorScheme.onBackground,
-                    cursorColor          = colorScheme.primary
+                    focusedTextColor = colorScheme.onBackground,
+                    unfocusedTextColor = colorScheme.onBackground,
+                    cursorColor = colorScheme.primary
                 )
             )
 
             Spacer(Modifier.height(12.dp))
 
             OutlinedTextField(
-                value         = trackQuery,
+                value = trackQuery,
                 onValueChange = { trackQuery = it },
-                label         = { Text("Song title", color = colorScheme.onSurfaceVariant) },
-                singleLine    = true,
-                modifier      = Modifier.fillMaxWidth(),
-                colors        = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor   = colorScheme.primary,
+                label = { Text("Song title", color = colorScheme.onSurfaceVariant) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = colorScheme.primary,
                     unfocusedBorderColor = colorScheme.outline,
-                    focusedTextColor     = colorScheme.onBackground,
-                    unfocusedTextColor   = colorScheme.onBackground,
-                    cursorColor          = colorScheme.primary
+                    focusedTextColor = colorScheme.onBackground,
+                    unfocusedTextColor = colorScheme.onBackground,
+                    cursorColor = colorScheme.primary
                 )
             )
 
@@ -162,8 +161,6 @@ fun SearchScreen(
 
                     scope.launch {
                         val rawResults = DeezerService.searchTracks(artistQuery, trackQuery)
-                        // Sorting can be complex here because we don't have BPM yet, 
-                        // but we keep the distinct logic as is for now.
                         results = rawResults.distinctBy { 
                             "${it.name?.lowercase()?.trim()}|${it.artist?.lowercase()?.trim()}" 
                         }
@@ -172,8 +169,8 @@ fun SearchScreen(
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape    = RoundedCornerShape(14.dp),
-                colors   = ButtonDefaults.buttonColors(containerColor = colorScheme.primary, contentColor = colorScheme.onPrimary)
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = colorScheme.primary, contentColor = colorScheme.onPrimary)
             ) {
                 Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
@@ -224,28 +221,11 @@ fun SearchScreen(
                                 isAdding = true
                                 scope.launch {
                                     try {
-                                        // Fetch BPM and preview URL for the specific track selected
                                         val (preview, bpm) =
                                             DeezerService.getTrackDetails(track.artist ?: "", track.name ?: "", track.deezerId)
-                                        
-                                        // Logic for testing: if no preview, ask to pick another
                                         if (preview.isBlank()) {
                                             trackWithNoPreview = track
-                                            /* 
-                                            // Original logic commented for testing
-                                            if (selectedSeeds.size < maxSeeds) {
-                                                selectedSeeds.add(
-                                                    track.copy(
-                                                        category = categoryLabel,
-                                                        previewUrl = preview,
-                                                        bpm = bpm
-                                                    )
-                                                )
-                                                if (selectedSeeds.size == maxSeeds) onNavigateToSeeds()
-                                            }
-                                            */
                                         } else {
-                                            // Regular logic if preview exists
                                             if (selectedSeeds.size < maxSeeds) {
                                                 selectedSeeds.add(
                                                     track.copy(
@@ -266,14 +246,14 @@ fun SearchScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(track.name ?: "",   color = colorScheme.onSurface, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                            Text(track.artist ?: "", color = colorScheme.onSurfaceVariant,   fontSize = 12.sp)
+                            Text(track.name ?: "", color = colorScheme.onSurface, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            Text(track.artist ?: "", color = colorScheme.onSurfaceVariant, fontSize = 12.sp)
                         }
                         when {
-                            alreadyAdded -> Text("✓ Added",  color = colorScheme.tertiary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            isAdding     -> CircularProgressIndicator(modifier = Modifier.size(12.dp), strokeWidth = 2.dp)
-                            canAdd       -> Text("+ Add",    color = colorScheme.primary,  fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            else         -> Text("Full",     color = colorScheme.onSurfaceVariant,   fontSize = 11.sp)
+                            alreadyAdded -> Text("✓ Added", color = colorScheme.tertiary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            isAdding -> CircularProgressIndicator(modifier = Modifier.size(12.dp), strokeWidth = 2.dp)
+                            canAdd -> Text("+ Add", color = colorScheme.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            else -> Text("Full", color = colorScheme.onSurfaceVariant, fontSize = 11.sp)
                         }
                     }
                 }

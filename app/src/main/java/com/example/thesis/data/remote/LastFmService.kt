@@ -93,7 +93,6 @@ object LastFmService {
                 val json = fetchJson(urlString) ?: return@withContext emptyList()
                 parseSimilarTracks(json)
             } catch (_: Exception) {
-                Log.e("LastFm", "Error getting similar tracks for $track")
                 emptyList()
             }
         }

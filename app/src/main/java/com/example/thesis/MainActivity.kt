@@ -529,8 +529,7 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
     override fun onMessageReceived(messageEvent: MessageEvent) {
         if (messageEvent.path == "/beat") {
             val heartRate = String(messageEvent.data).toDoubleOrNull() ?: 0.0
-            
-            // Only count as "connected" or "active" if we have a valid pulse > 0
+
             if (heartRate > 0) {
                 rateReceived = heartRate
                 isConnected = true

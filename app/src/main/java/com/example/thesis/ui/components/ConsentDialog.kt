@@ -22,7 +22,7 @@ fun ConsentDialog(
     val colorScheme = MaterialTheme.colorScheme
 
     Dialog(
-        onDismissRequest = { /* Cannot dismiss without action */ },
+        onDismissRequest = {  },
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(

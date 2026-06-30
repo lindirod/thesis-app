@@ -354,10 +354,7 @@ private fun shareIndividualSession(context: Context, session: UserSession) {
 
 private fun shareFile(context: Context, file: File) {
     if (!file.exists()) return
-    
-    // Using a simpler sharing method that doesn't strictly require FileProvider for small text files
-    // though FileProvider is better for larger apps, for a thesis prototype this is often sufficient
-    // and easier to implement quickly.
+
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = "application/json"
         putExtra(Intent.EXTRA_TEXT, file.readText())

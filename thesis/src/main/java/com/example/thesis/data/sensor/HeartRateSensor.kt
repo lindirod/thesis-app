@@ -19,50 +19,36 @@ class HeartRateSensor(context: Context) {
 
     fun heartRateFlow(): Flow<Double> = callbackFlow {
         val callback = object : MeasureCallback {
-            override fun onAvailabilityChanged(dataType: DeltaDataType<*, *>, availability: Availability) {
+            override fun onAvailabilityChanged(
+                dataType: DeltaDataType<*, *>,
+                availability: Availability
+            ) {
                 Log.d("HeartRateSensor", "Availability changed: $availability")
             }
-
             override fun onDataReceived(data: DataPointContainer) {
                 val heartRateData = data.getData(DataType.HEART_RATE_BPM)
                 if (heartRateData.isNotEmpty()) {
-                    val lastValue = heartRateData.last().value
-                    trySend(lastValue)
+                    val rate = heartRateData.last().value
+                    Log.d("HeartRateSensor", "BPM: $rate")
+                    trySend(rate)
                 }
             }
         }
-
-        launch {
-            try {
-                measureClient.registerMeasureCallback(DataType.HEART_RATE_BPM, callback)
-                Log.d("HeartRateSensor", "Registered callback")
-            } catch (e: Exception) {
-                Log.e("HeartRateSensor", "Failed to register callback: ${e.message}")
-                close(e)
-            }
+        try {
+            measureClient.registerMeasureCallback(DataType.HEART_RATE_BPM, callback)
+        } catch (e: Exception) {
+            Log.e("HeartRateSensor", "Error registering: ${e.message}")
+            close(e)
         }
 
         awaitClose {
             launch {
                 try {
                     measureClient.unregisterMeasureCallback(DataType.HEART_RATE_BPM, callback)
-                    Log.d("HeartRateSensor", "Unregistered callback")
                 } catch (e: Exception) {
-                    Log.e("HeartRateSensor", "Failed to unregister callback: ${e.message}")
+                    Log.e("HeartRateSensor", "Error unregistering: ${e.message}")
                 }
             }
-        }
-    }
-
-    suspend fun start(callback: MeasureCallback) {
-        measureClient.registerMeasureCallback(DataType.HEART_RATE_BPM, callback)
-    }
-
-    suspend fun stop(callback: MeasureCallback) {
-        try {
-            measureClient.unregisterMeasureCallback(DataType.HEART_RATE_BPM, callback)
-        } catch (e: Exception) {
-            Log.e("HeartRateSensor", "Error unregistering: ${e.message}")
         }
     }
 }

@@ -51,11 +51,8 @@ fun RecommendationsScreen(
     onSavePlaylist: (List<TrackResult>, List<TrackResult>, List<TrackResult>, List<TrackResult>) -> Unit,
     onNavigateToFeedback: (TrackResult, Double, List<Int>, List<Int>) -> Unit
 ) {
-    // Use rememberSaveable to keep state across navigation/recomposition
     var recommendations by rememberSaveable { mutableStateOf<List<TrackResult>>(emptyList()) }
-    
-    // Track if ANY song has been evaluated in this session
-    // (Used to decide if we need 10s calibration before playing)
+
     val sessionTotalFinished = remember(seeds, savedPlaylists) {
         val seedFinished = seeds.count { it.measuredBpm != null && (it.measuredBpm ?: 0) > 0 }
         val recsFinished = savedPlaylists.sumOf { p -> 
@@ -64,7 +61,6 @@ fun RecommendationsScreen(
         seedFinished + recsFinished
     }
 
-    // Sync recommendations state with any external updates (like handleTrackFinished in MainActivity)
     LaunchedEffect(seeds, savedPlaylists) {
          if (recommendations.isNotEmpty()) {
              val allSessionTracks = savedPlaylists.flatMap { it.tracks.orEmpty() }
@@ -92,19 +88,18 @@ fun RecommendationsScreen(
     var errorMsg by remember { mutableStateOf("") }
     var retryCount by remember { mutableIntStateOf(0) }
     var isSaved by rememberSaveable { mutableStateOf(false) }
-
     var selectedCategory by rememberSaveable { mutableStateOf<String?>(null) }
-    
-    // Hidden monitoring state
+
     val playbackSamples = remember { mutableStateListOf<Double>() }
+
     var currentTrack by remember { mutableStateOf<TrackResult?>(null) }
     var isPaused by remember { mutableStateOf(false) }
     var playingUrl by remember { mutableStateOf<String?>(null) }
-
-    // Calibration State
     var isCalibrating by remember { mutableStateOf(false) }
     var calibrationProgress by remember { mutableFloatStateOf(0f) }
+
     val calibrationSamples = remember { mutableStateListOf<Double>() }
+
     var calibrationTrack by remember { mutableStateOf<TrackResult?>(null) }
 
     val colorScheme = MaterialTheme.colorScheme
@@ -120,7 +115,6 @@ fun RecommendationsScreen(
         }
     }
 
-    // Error handling for MediaPlayer
     var playbackError by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(mediaPlayer) {
         mediaPlayer.setOnErrorListener { _, what, extra ->
@@ -133,7 +127,6 @@ fun RecommendationsScreen(
         }
     }
 
-    // Monitor HR for calibration or playback - use heartRateSampleCounter to ensure every sample is caught
     LaunchedEffect(heartRateSampleCounter, isPaused, isCalibrating) {
         if (isConnected && liveHeartRate > 0) {
             if (isCalibrating) {
@@ -160,8 +153,7 @@ fun RecommendationsScreen(
                 delay(duration / steps)
                 calibrationProgress = i.toFloat() / steps
             }
-            
-            // Finish Calibration
+
             val samplesSnapshot = calibrationSamples.toList()
             val avg = if (samplesSnapshot.isNotEmpty()) samplesSnapshot.average() else liveHeartRate
             
@@ -233,8 +225,7 @@ fun RecommendationsScreen(
 
     LaunchedEffect(seeds, retryCount) {
         if (recommendations.isNotEmpty() && errorMsg.isEmpty()) return@LaunchedEffect
-        
-        // Try to load existing recommendations from saved playlists if we're resuming
+
         val existingRecs = savedPlaylists.flatMap { it.tracks.orEmpty() }.filter { !it.fromSeed.isNullOrEmpty() }
         if (existingRecs.isNotEmpty() && retryCount == 0) {
             Log.d("RecsLog", "Resuming session: Loaded ${existingRecs.size} recommendations from storage.")
@@ -275,7 +266,6 @@ fun RecommendationsScreen(
                     Log.d("RecsLog", "Found ${seedTags.size} tags for ${seed.name}: $seedTags")
 
                     var currentMethod = ""
-                    // Fetch slightly more to ensure we have 5 candidates after filtering the same artist
                     var candidateTracks = LastFmService.getSimilarTracks(seed.artist ?: "", seed.name ?: "", limit = 50)
 
                     if (candidateTracks.isEmpty()) {
@@ -291,7 +281,6 @@ fun RecommendationsScreen(
                                     tracksFromTags.addAll(tagTracks)
                                 } catch (_: Exception) { }
                             }
-                            // Pool of top 10 from tags, from which we will pick 2
                             candidateTracks = tracksFromTags
                                 .distinctBy { "${it.name?.lowercase()}|${it.artist?.lowercase()}" }
                                 .take(10)
@@ -300,7 +289,6 @@ fun RecommendationsScreen(
                     } else {
                         Log.d("RecsLog", "Found ${candidateTracks.size} similar tracks for ${seed.name}.")
                         currentMethod = "Similar Tracks"
-                        // Pool of top 5 (excluding same artist), from which we will pick 2
                         candidateTracks = candidateTracks
                             .filter { (it.artist?.lowercase() ?: "") != (seed.artist?.lowercase() ?: "") }
                             .take(5)
@@ -350,7 +338,6 @@ fun RecommendationsScreen(
             recommendations = finalRecommendations.distinctBy { "${it.name?.lowercase()}|${it.artist?.lowercase()}" }
             Log.d("RecsLog", "Finished fetching. Total recommendations: ${recommendations.size}")
 
-            // Log Summary of BPM data for research verification
             Log.d("RecsLog", "--- BPM DATA SUMMARY ---")
             seeds.forEach { Log.d("RecsLog", "SEED: ${it.name} - BPM: ${it.bpm}") }
             recommendations.forEach { Log.d("RecsLog", "REC: ${it.name} - BPM: ${it.bpm}") }
@@ -376,7 +363,6 @@ fun RecommendationsScreen(
 
     Box(modifier = Modifier.fillMaxSize().background(colorScheme.background)) {
         Column(modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 24.dp)) {
-            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -528,8 +514,6 @@ fun RecommendationsScreen(
                         } else {
                             playbackError = null
                             val isDifferentTrack = playingUrl != track.previewUrl
-                            
-                            // The first song excludes the 10s calibration because it follows the 30s session calibration
                             val shouldCalibrate = isConnected && sessionTotalFinished > 0 && isDifferentTrack
                             
                             if (shouldCalibrate) {
@@ -539,15 +523,12 @@ fun RecommendationsScreen(
                                 playingUrl = null
                                 isPaused = false
                             } else if (playingUrl == null || isDifferentTrack) {
-                                // Play directly (First song or already calibrated)
                                 try {
                                     mediaPlayer.reset()
                                     mediaPlayer.setDataSource(track.previewUrl)
                                     mediaPlayer.prepareAsync()
                                     mediaPlayer.setOnPreparedListener { it.start() }
                                     playingUrl = track.previewUrl
-                                    
-                                    // For the first track, use the session baseline HR
                                     currentTrack = if (sessionTotalFinished == 0) {
                                         track.copy(preTrackAvgBpm = userHeartRate.toInt())
                                     } else {
@@ -560,7 +541,6 @@ fun RecommendationsScreen(
                                     playbackError = "Failed to play preview."
                                 }
                             } else {
-                                // Toggle Pause/Resume for the same track
                                 if (isPaused) {
                                     mediaPlayer.start()
                                     isPaused = false

@@ -45,21 +45,18 @@ fun CalibrationScreen(
     LaunchedEffect(isRunning, isConnected) {
         if (isRunning && isConnected) {
             hasStartedTiming = true
-            
-            // Countdown 30 seconds
+
             while (timeLeft > 0) {
                 delay(1000)
                 timeLeft--
             }
-            
-            // Once timeLeft is 0, finish immediately
+
             val average = if (collectedBpms.isNotEmpty()) collectedBpms.average() else currentBpm
             Log.d("CalibrationLog", "30s complete. Average: $average. Samples: ${collectedBpms.size}")
             onCalibrationComplete(average, collectedBpms.map { it.toInt() })
         }
     }
 
-    // BPM sampling logic - triggered by heartRateSampleCounter
     LaunchedEffect(heartRateSampleCounter) {
         if (isRunning && isConnected && hasStartedTiming && currentBpm > 0 && timeLeft > 0) {
             if (collectedBpms.size < 30) {
@@ -68,7 +65,6 @@ fun CalibrationScreen(
             }
         }
     }
-
     Box(
         modifier = Modifier.fillMaxSize().background(colorScheme.background)
             .padding(horizontal = 24.dp, vertical = 24.dp)
@@ -76,7 +72,6 @@ fun CalibrationScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Header Row: Back button, Home button, and Theme Toggle on the same line
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -89,7 +84,6 @@ fun CalibrationScreen(
                         tint = colorScheme.onSurfaceVariant
                     )
                 }
-
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(
                         onClick = onNavigateHome,
@@ -99,16 +93,13 @@ fun CalibrationScreen(
                     ) {
                         Icon(Icons.Default.Home, contentDescription = "Home")
                     }
-
                     ThemeToggle(
                         isDarkMode = isDarkMode,
                         onToggle = onToggleTheme
                     )
                 }
             }
-
             Spacer(Modifier.height(32.dp))
-
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -119,7 +110,6 @@ fun CalibrationScreen(
                     fontWeight = FontWeight.Light,
                     color = colorScheme.onBackground
                 )
-                
                 Text(
                     text = if (isRunning && !hasStartedTiming) "WAITING FOR HEART RATE..." else "STABILIZING BASELINE",
                     fontSize = 11.sp, 
@@ -127,9 +117,7 @@ fun CalibrationScreen(
                     letterSpacing = 2.sp, 
                     fontWeight = FontWeight.Bold
                 )
-
                 Spacer(Modifier.height(48.dp))
-
                 Box(contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(
                         progress = { progress },
@@ -160,7 +148,6 @@ fun CalibrationScreen(
                     textAlign = TextAlign.Center, 
                     color = colorScheme.onSurfaceVariant
                 )
-
                 Spacer(Modifier.height(32.dp))
 
                 if (!isRunning) {

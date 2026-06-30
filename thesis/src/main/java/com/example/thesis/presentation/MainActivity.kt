@@ -19,13 +19,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.core.content.ContextCompat
-import androidx.health.services.client.HealthServices
-import androidx.health.services.client.MeasureCallback
-import androidx.health.services.client.data.Availability
-import androidx.health.services.client.data.DataPointContainer
-import androidx.health.services.client.data.DataType
-import androidx.health.services.client.data.DeltaDataType
-import androidx.health.services.client.unregisterMeasureCallback
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
@@ -36,20 +29,22 @@ import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
+import com.example.thesis.data.messaging.MessageSender
+import com.example.thesis.data.sensor.HeartRateSensor
 import com.example.thesis.presentation.theme.ThesisTheme
 import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Wearable
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListener {
 
-    /* Creates a client of the API Health Services
-    * Register sensors
-    * Receive physiological data */
-    private val measureClient by lazy { HealthServices.getClient(this).measureClient }
+    private val sensor by lazy { HeartRateSensor(this) }
+    private val messageSender by lazy { MessageSender(this) }
+    private var sensorJob: Job? = null
 
     /* Keeps current value of BPM
     * When changed, UI updates automatically */
@@ -78,31 +73,6 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
             toggleReading()
         } else {
             Log.e("Smartwatch", "Permission denied")
-        }
-    }
-
-    /*
-    * It's called everytime new data arrives from the sensors
-    * */
-    private val heartRateCallback = object : MeasureCallback {
-
-        // Indicates if sensor is available or not
-        override fun onAvailabilityChanged(dataType: DeltaDataType<*, *>, availability: Availability) {
-            Log.d("Smartwatch", "Availability changed: $availability")
-        }
-
-        /* Starts when data arrives from sensor
-        * BPM data
-        * Last value
-        * Updates
-        * Sends to mobile */
-        override fun onDataReceived(data: DataPointContainer) {
-            val heartRateData = data.getData(DataType.HEART_RATE_BPM)
-            if (heartRateData.isNotEmpty()) {
-                currentRate = heartRateData.last().value
-                Log.d("Smartwatch", "BPM: $currentRate")
-                sendRate(currentRate)
-            }
         }
     }
 
@@ -153,61 +123,35 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
 
     private fun toggleReading() {
         if (readData) {
-            lifecycleScope.launch {
-                try {
-                    measureClient.unregisterMeasureCallback(DataType.HEART_RATE_BPM, heartRateCallback)
-                    readData = false
-                    currentRate = 0.0
-                    if (wakeLock.isHeld) wakeLock.release()
-                    Log.d("Smartwatch", "Sensor OFF")
-                } catch (e: Exception) {
-                    Log.e("Smartwatch", "Error stopping: ${e.message}")
-                }
-            }
+            sensorJob?.cancel()
+            readData = false
+            currentRate = 0.0
+            if (wakeLock.isHeld) wakeLock.release()
+            Log.d("Smartwatch", "Sensor OFF")
         } else {
-            lifecycleScope.launch {
-                try {
-                    measureClient.registerMeasureCallback(DataType.HEART_RATE_BPM, heartRateCallback)
-                    readData = true
-                    wakeLock.acquire(30 * 60 * 1000L /*30 minutes max*/)
-                    Log.d("Smartwatch", "Sensor ON")
-                } catch (e: Exception) {
-                    Log.e("Smartwatch", "Error starting: ${e.message}")
+            readData = true
+            wakeLock.acquire(30 * 60 * 1000L)
+            sensorJob = lifecycleScope.launch {
+                sensor.heartRateFlow().collect { rate ->
+                    currentRate = rate
+                    Log.d("Smartwatch", "BPM: $currentRate")
+                    sendRate(currentRate)
                 }
             }
+            Log.d("Smartwatch", "Sensor ON")
         }
     }
 
     private fun sendRate(bpm: Double) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val nodes = Wearable.getNodeClient(this@MainActivity).connectedNodes.await()
-                val bpmBytes = bpm.toString().toByteArray()
-
-                for (node in nodes) {
-                    Wearable.getMessageClient(this@MainActivity).sendMessage(
-                        node.id,
-                        "/beat",
-                        bpmBytes
-                    ).await()
-                }
-            } catch (e: Exception) {
-                Log.e("Smartwatch", "Error sending: ${e.message}")
-            }
+        lifecycleScope.launch {
+            messageSender.sendRate(bpm)
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        if (readData) {
-            lifecycleScope.launch {
-                try {
-                    measureClient.unregisterMeasureCallback(DataType.HEART_RATE_BPM, heartRateCallback)
-                } catch (e: Exception) {
-                    Log.e("Smartwatch", "Error removing callback: ${e.message}")
-                }
-            }
-        }
+        sensorJob?.cancel()
+        if (wakeLock.isHeld) wakeLock.release()
     }
 }
 

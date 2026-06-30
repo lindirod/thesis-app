@@ -72,7 +72,6 @@ class ResearchDataManager(context: Context) {
         
         val updatedSessions = currentData.sessions.orEmpty().map { session ->
             if (session.sessionId == sessionId) {
-                // Merge new/updated playlists with existing ones, replacing by ID
                 val newIds = newPlaylists.map { it.id }.toSet()
                 val merged = session.playlists.orEmpty().filter { it.id !in newIds } + newPlaylists
                 session.copy(playlists = merged)

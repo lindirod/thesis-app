@@ -46,27 +46,19 @@ fun PlaylistsScreen(
     var selectedPlaylistId by rememberSaveable { mutableStateOf<Long?>(null) }
     val selectedPlaylist = playlists.find { it.id == selectedPlaylistId }
     val colorScheme = MaterialTheme.colorScheme
-
-    // Track if ANY song has been evaluated in this session
-    // (Used to decide if we need calibration before playing)
     val sessionTotalFinished = remember(playlists) {
         playlists.sumOf { p -> 
             p.tracks.orEmpty().count { (it.measuredBpm ?: 0) > 0 } 
         }
     }
 
-    // Hidden monitoring state
     val playbackSamples = remember { mutableStateListOf<Double>() }
     var currentTrack by remember { mutableStateOf<TrackResult?>(null) }
     var isPaused by remember { mutableStateOf(false) }
-
-    // Calibration State
     var isCalibrating by remember { mutableStateOf(false) }
     var calibrationProgress by remember { mutableFloatStateOf(0f) }
     val calibrationSamples = remember { mutableStateListOf<Double>() }
     var calibrationTrack by remember { mutableStateOf<TrackResult?>(null) }
-
-    // Audio Player State
     var playingUrl by remember { mutableStateOf<String?>(null) }
     val mediaPlayer = remember { 
         MediaPlayer().apply {
@@ -79,7 +71,6 @@ fun PlaylistsScreen(
         }
     }
 
-    // Error handling for MediaPlayer
     var playbackError by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(mediaPlayer) {
         mediaPlayer.setOnErrorListener { _, what, extra ->
@@ -92,7 +83,6 @@ fun PlaylistsScreen(
         }
     }
 
-    // Monitor HR in the "backend" during playback - use heartRateSampleCounter to ensure every sample is caught
     LaunchedEffect(heartRateSampleCounter, isPaused, isCalibrating) {
         if (isConnected && liveHeartRate > 0) {
             if (isCalibrating) {
@@ -119,11 +109,10 @@ fun PlaylistsScreen(
                 kotlinx.coroutines.delay(duration / steps)
                 calibrationProgress = i.toFloat() / steps
             }
-            
             val samplesSnapshot = calibrationSamples.toList()
             val avg = if (samplesSnapshot.isNotEmpty()) samplesSnapshot.average() else liveHeartRate
-            
             val track = calibrationTrack
+
             if (track != null) {
                 try {
                     mediaPlayer.reset()
@@ -160,7 +149,6 @@ fun PlaylistsScreen(
                     onTrackFinished(track, average, 0, 0, "Seed", "Seed", track.preTrackReadings.orEmpty(), samplesSnapshot)
                 }
             }
-            
             playingUrl = null
             isPaused = false
             playbackSamples.clear()
@@ -196,7 +184,6 @@ fun PlaylistsScreen(
                         tint = arrowColor
                     )
                 }
-
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(
                         onClick = onNavigateHome,
@@ -213,16 +200,13 @@ fun PlaylistsScreen(
                     )
                 }
             }
-
             Spacer(Modifier.height(16.dp))
-
             Text(
                 text = if (selectedPlaylistId == null) "My Playlists" else "Playlist Details",
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Light,
                 color = colorScheme.onBackground
             )
-
             Spacer(Modifier.height(24.dp))
 
             if (!isInternetConnected) {
@@ -280,12 +264,10 @@ fun PlaylistsScreen(
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
                     }
-
                     if (isCalibrating) {
                         CalibrationOverlay(progress = calibrationProgress, track = calibrationTrack)
                         Spacer(Modifier.height(16.dp))
                     }
-
                     PlaylistDetailView(
                         playlist = playlist,
                         playingUrl = playingUrl,
@@ -298,8 +280,6 @@ fun PlaylistsScreen(
                             } else {
                                 playbackError = null
                                 val isDifferentTrack = playingUrl != track.previewUrl
-                                
-                                // The 10s calibration excludes the first song because it uses the 30s session calibration
                                 val shouldCalibrate = isConnected && sessionTotalFinished > 0 && isDifferentTrack
 
                                 if (shouldCalibrate) {
@@ -321,7 +301,6 @@ fun PlaylistsScreen(
                                         } else {
                                             track
                                         }
-
                                         isPaused = false
                                         playbackSamples.clear()
                                     } catch (e: Exception) {
@@ -329,7 +308,6 @@ fun PlaylistsScreen(
                                         playbackError = "Failed to play preview."
                                     }
                                 } else {
-                                    // Toggle Pause/Resume for the same track
                                     if (isPaused) {
                                         mediaPlayer.start()
                                         isPaused = false

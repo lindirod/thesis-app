@@ -88,13 +88,10 @@ fun BpmScreen(
                     )
                 }
             }
-
             Spacer(Modifier.height(32.dp))
-
             Text("Physiological Playlist", fontSize = 22.sp, color = colorScheme.onBackground, fontWeight = FontWeight.Light)
             Text(if (allSeedsSelected) "READY TO MATCH" else "PREPARING VIBES", 
                 fontSize = 13.sp, color = colorScheme.secondary, letterSpacing = 4.sp, fontWeight = FontWeight.Bold)
-
             Spacer(Modifier.height(40.dp))
 
             // Card BPM
@@ -127,17 +124,13 @@ fun BpmScreen(
             }
 
             Spacer(Modifier.height(32.dp))
-
             if (!allSeedsSelected) {
-                // PHASE 1: Selecting Seeds
                 Text(
                     "Connect your watch to start, then select your music seeds to build your profile.",
                     fontSize = 14.sp, color = colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 8.dp)
                 )
-                
                 Spacer(Modifier.height(24.dp))
-
                 Button(
                     onClick = onNavigateToSearch,
                     modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -150,15 +143,12 @@ fun BpmScreen(
                     Text("Set Vibe Seeds (${seedCount}/$maxSeeds)", fontWeight = FontWeight.SemiBold)
                 }
             } else {
-                // PHASE 2: All seeds selected, ready for recommendations
                 Text(
                     "Seeds ready. Ensure your heart rate is active to generate your physiological playlist.",
                     fontSize = 14.sp, color = colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 8.dp)
                 )
-
                 Spacer(Modifier.height(24.dp))
-
                 Button(
                     onClick = onGeneratePlaylist,
                     modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -170,9 +160,7 @@ fun BpmScreen(
                     Spacer(Modifier.width(8.dp))
                     Text("Generate Physiological Playlist", fontWeight = FontWeight.SemiBold)
                 }
-
                 Spacer(Modifier.height(12.dp))
-                
                 OutlinedButton(
                     onClick = onNavigateToSeeds,
                     modifier = Modifier.fillMaxWidth().height(52.dp),
@@ -183,9 +171,7 @@ fun BpmScreen(
                     Text("Edit My Seeds", fontWeight = FontWeight.Medium)
                 }
             }
-
             Spacer(Modifier.weight(1f))
-
             Text("Physiological data is required for matching.", fontSize = 11.sp, color = colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
         }
     }

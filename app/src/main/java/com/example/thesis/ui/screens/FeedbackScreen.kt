@@ -31,27 +31,20 @@ fun FeedbackScreen(
     var currentStep by remember { mutableIntStateOf(1) }
     val totalSteps = if (isSeed) 3 else 4
     val colorScheme = MaterialTheme.colorScheme
-
-    // State for answers
-    // Using null for unselected states to enforce requirement
     var energyRating by remember { mutableStateOf<Int?>(null) }
     var moodCaptureRating by remember { mutableStateOf(if (isSeed) 0 else null) }
     var selectedFamiliarity by remember { mutableStateOf<String?>(null) }
     var clipEvaluation by remember { mutableStateOf<String?>(null) }
-
     val familiarityOptions = listOf(
         "I know it very well",
         "I've heard it before",
         "It's completely new to me"
     )
-    
     val clipOptions = listOf("Yes", "No")
 
-    // Handle system back button to go between steps
     BackHandler(enabled = currentStep > 1) {
         currentStep--
     }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -81,7 +74,6 @@ fun FeedbackScreen(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Progress Bar
             LinearProgressIndicator(
                 progress = { currentStep.toFloat() / totalSteps },
                 modifier = Modifier.fillMaxWidth().height(8.dp),
@@ -89,18 +81,14 @@ fun FeedbackScreen(
                 trackColor = colorScheme.surfaceVariant,
                 strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
             )
-            
             Spacer(Modifier.height(16.dp))
-            
             Text(
                 text = "Step $currentStep of $totalSteps",
                 fontSize = 12.sp,
                 color = colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Bold
             )
-
             Spacer(Modifier.height(32.dp))
-
             Text(
                 text = "Feedback for \"${track.name}\"",
                 fontSize = 16.sp,
@@ -114,10 +102,8 @@ fun FeedbackScreen(
                 color = colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
-
             Spacer(Modifier.height(48.dp))
 
-            // Logic to determine which question to show based on step and isSeed
             val isStepAnswered = when {
                 currentStep == 1 -> energyRating != null
                 !isSeed && currentStep == 2 -> moodCaptureRating != null
@@ -125,7 +111,6 @@ fun FeedbackScreen(
                 (isSeed && currentStep == 3) || (!isSeed && currentStep == 4) -> clipEvaluation != null
                 else -> false
             }
-
             when {
                 currentStep == 1 -> {
                     SliderQuestion(
@@ -166,9 +151,7 @@ fun FeedbackScreen(
                     )
                 }
             }
-
             Spacer(Modifier.weight(1f))
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -231,7 +214,6 @@ fun SliderQuestion(
             textAlign = TextAlign.Center
         )
         Spacer(Modifier.height(48.dp))
-        
         Slider(
             value = selectedValue.toFloat(),
             onValueChange = { onValueChange(it.toInt()) },
@@ -243,7 +225,6 @@ fun SliderQuestion(
                 inactiveTrackColor = colorScheme.outlineVariant.copy(alpha = 0.24f)
             )
         )
-        
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween
@@ -257,7 +238,6 @@ fun SliderQuestion(
                 )
             }
         }
-        
         Spacer(Modifier.height(12.dp))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(labelLow, fontSize = 12.sp, color = colorScheme.onSurfaceVariant)

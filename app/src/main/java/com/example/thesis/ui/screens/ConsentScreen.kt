@@ -40,7 +40,6 @@ fun ConsentScreen(
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
             )
-
             Spacer(Modifier.height(24.dp))
 
             SectionTitle("Background")
@@ -85,7 +84,6 @@ fun ConsentScreen(
             BulletPoint("You voluntarily agree to participate in the study and authorize the anonymous collection of your demographic and physiological data for the indicated academic purposes.")
 
             Spacer(Modifier.height(32.dp))
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -98,7 +96,6 @@ fun ConsentScreen(
                 ) {
                     Text("Decline and Exit", textAlign = TextAlign.Center)
                 }
-
                 Button(
                     onClick = onAccept,
                     modifier = Modifier.weight(1f).height(56.dp),
@@ -108,7 +105,6 @@ fun ConsentScreen(
                     Text("Accept and Participate", textAlign = TextAlign.Center)
                 }
             }
-            
             Spacer(Modifier.height(24.dp))
         }
     }
